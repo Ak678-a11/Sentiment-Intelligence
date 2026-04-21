@@ -25,16 +25,16 @@ It also provides **word-level insights**, highlighting which words influenced th
 ## ⚙️ Installation
 
 ### 1. Clone the repository
-```bash
+Bash
 git clone https://github.com/your-username/sentiment-intelligence.git
 cd sentiment-intelligence
 
-2. Create virtual environment (optional)
+### 2. Create virtual environment (optional)
 Bash
 python -m venv venv
 venv\Scripts\activate
 
-📦 Requirements
+### 📦 Requirements
 Install dependencies using:
 Bash
 pip install -r requirements.txt
@@ -46,11 +46,11 @@ pandas
 scikit-learn
 plotly
 
-▶️ Run the Application
+### ▶️ Run the Application
 Bash
 streamlit run app.py
 
-🔄 Workflow
+### 🔄 Workflow
 Preprocessing
 Clean text (remove links, symbols)
 Vectorization
@@ -61,7 +61,7 @@ Output
 Prediction + confidence score
 Word highlighting
 
-📈 Results
+### 📈 Results
 Accuracy: ~67%
 Metrics:
 Precision
@@ -69,27 +69,27 @@ Recall
 F1-score
 Confusion Matrix
 
-🧪 How to Use
+### 🧪 How to Use
 Open the app
 Enter text
 Click Analyze
 View prediction + insights
 
-📊 Insights
+### 📊 Insights
 Sentiment distribution (pie chart)
 Word frequency chart
 Word highlighting
 Model performance metrics
 
-⚠️ Limitations
+### ⚠️ Limitations
 Limited context understanding
 Cannot detect sarcasm
 Depends on dataset quality
 
-🔮 Future Improvements
+### 🔮 Future Improvements
 Use BERT / Deep Learning
 Improve accuracy
 Handle complex language
 
-📜 License
+### 📜 License
 MIT License
