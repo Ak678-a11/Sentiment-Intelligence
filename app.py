@@ -29,23 +29,6 @@ model = load_model()
 labels = ["negative", "neutral", "positive"]
 
 # =============================
-# SAFE DATA LOAD (NO CRASH)
-# =============================
-@st.cache_data
-def load_data():
-    try:
-        df = pd.read_csv("twitter_training.csv", header=None)
-        df = df.iloc[:, :4]
-        df.columns = ["id", "entity", "label", "text"]
-        df["text"] = df["text"].fillna("")
-        df["label"] = df["label"].astype(str).str.lower()
-        return df
-    except:
-        return None
-
-df = load_data()
-
-# =============================
 # CLEAN TEXT
 # =============================
 def clean_text(text):
@@ -55,7 +38,7 @@ def clean_text(text):
     return text
 
 # =============================
-# WORD HIGHLIGHTING (MODEL BASED)
+# WORD HIGHLIGHTING
 # =============================
 def highlight_text(text, model):
     try:
@@ -63,27 +46,18 @@ def highlight_text(text, model):
         clf = model.named_steps["clf"]
 
         words = text.split()
-        word_scores = {}
+        highlighted = ""
 
         for word in words:
             vec = vectorizer.transform([word])
             score = clf.decision_function(vec)
 
-            if len(score.shape) > 1:
-                score = score[0]
+            if hasattr(score, "__len__"):
+                score = score[0][0] if len(score[0]) > 0 else 0
 
-            word_scores[word] = score[0] if hasattr(score, "__len__") else score
+            color = "rgba(0,255,0,0.4)" if score > 0 else "rgba(255,0,0,0.4)"
 
-        highlighted = ""
-        for word in words:
-            score = word_scores.get(word, 0)
-
-            if score > 0:
-                color = "rgba(0,255,0,0.4)"
-            else:
-                color = "rgba(255,0,0,0.4)"
-
-            highlighted += f"<span style='background-color:{color};padding:2px;margin:2px'>{word}</span> "
+            highlighted += f"<span style='background-color:{color};padding:3px;margin:2px;border-radius:5px'>{word}</span> "
 
         return highlighted
 
@@ -153,7 +127,7 @@ if page == "🔍 Analyzer":
         st.metric("Confidence", f"{conf:.2f}")
         st.progress(conf)
 
-        # PIE CHART (FIXED)
+        # PIE CHART
         if len(proba) == len(labels):
             fig = px.pie(names=labels, values=proba, title="Confidence Distribution")
             st.plotly_chart(fig, width='stretch')
@@ -176,17 +150,58 @@ if page == "🔍 Analyzer":
         log_history(text, pred, conf)
 
 # =============================
-# DASHBOARD
+# DASHBOARD (UPGRADED)
 # =============================
 if page == "📊 Dashboard":
 
-    st.title("📊 Dataset Overview")
+    st.title("📊 AI Usage Dashboard")
 
-    if df is not None:
-        st.metric("Total Samples", len(df))
-        st.plotly_chart(px.pie(df, names="label"), width='stretch')
+    history = st.session_state.history
+
+    if len(history) == 0:
+        st.info("No analysis done yet. Go to Analyzer and try some text.")
     else:
-        st.warning("Dataset not available in deployed version")
+        df_hist = pd.DataFrame(history)
+
+        # METRICS
+        total = len(df_hist)
+        pos = len(df_hist[df_hist["prediction"] == "positive"])
+        neg = len(df_hist[df_hist["prediction"] == "negative"])
+        neu = len(df_hist[df_hist["prediction"] == "neutral"])
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total Analyses", total)
+        c2.metric("Positive", pos)
+        c3.metric("Negative", neg)
+        c4.metric("Neutral", neu)
+
+        # PIE CHART
+        st.subheader("Sentiment Distribution")
+        fig = px.pie(
+            names=["Positive", "Negative", "Neutral"],
+            values=[pos, neg, neu]
+        )
+        st.plotly_chart(fig, width='stretch')
+
+        # TOP WORDS
+        st.subheader("Top Words Used")
+
+        all_text = " ".join(df_hist["text"])
+        words = all_text.lower().split()
+
+        stop = {"the","is","and","to","a","of","for","in","on"}
+        words = [w for w in words if w not in stop]
+
+        wc = Counter(words).most_common(10)
+
+        if wc:
+            df_words = pd.DataFrame(wc, columns=["word","count"])
+            st.bar_chart(df_words.set_index("word"))
+
+        # CONFIDENCE
+        st.subheader("Confidence Insights")
+        avg_conf = df_hist["confidence"].mean()
+        st.metric("Average Confidence", f"{avg_conf:.2f}")
 
 # =============================
 # MODEL METRICS
@@ -194,8 +209,6 @@ if page == "📊 Dashboard":
 if page == "📈 Model Metrics":
 
     st.title("📈 Model Metrics")
-
-    st.info("Model evaluated during training")
 
     st.metric("Accuracy", "67%")
     st.write("Precision, Recall, F1-score used for evaluation")
