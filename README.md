@@ -5,7 +5,7 @@
 
 ## 🚀 Overview
 
-Sentiment Intelligence is a machine learning web application that classifies text into **positive, negative, or neutral sentiment**.
+Sentiment Intelligence is a machine learning web application that classifies text into **positive or negative sentiment**.
 
 It also provides **word-level insights**, highlighting which words influenced the prediction.
 
@@ -13,7 +13,7 @@ It also provides **word-level insights**, highlighting which words influenced th
 
 ## 📊 Dataset
 
-- Source: Twitter Sentiment Dataset  
+- Source: IMDB movie reviews dataset 
 - Contains labeled tweets  
 
 ### Features:
