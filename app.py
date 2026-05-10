@@ -17,11 +17,10 @@ st.set_page_config(
 )
 
 # =========================================
-# CUSTOM CSS
+# CUSTOM UI
 # =========================================
 
 st.markdown("""
-
 <style>
 
 .main {
@@ -40,7 +39,7 @@ h1, h2, h3 {
 }
 
 .stButton button {
-    background: linear-gradient(90deg,#3b82f6,#06b6d4);
+    background: linear-gradient(90deg,#2563eb,#06b6d4);
     color: white;
     border-radius: 10px;
     border: none;
@@ -48,15 +47,7 @@ h1, h2, h3 {
     font-weight: bold;
 }
 
-.metric-box {
-    padding: 20px;
-    border-radius: 15px;
-    color: white;
-    text-align: center;
-}
-
 </style>
-
 """, unsafe_allow_html=True)
 
 # =========================================
@@ -72,10 +63,15 @@ if "history" not in st.session_state:
 
 @st.cache_resource
 def load_model():
+
     with open("model.pkl", "rb") as f:
         return pickle.load(f)
 
 model = load_model()
+
+# =========================================
+# LABELS
+# =========================================
 
 labels = ["negative", "neutral", "positive"]
 
@@ -86,6 +82,8 @@ labels = ["negative", "neutral", "positive"]
 def clean_text(text):
 
     text = str(text).lower()
+
+    text = re.sub(r"<.*?>", "", text)
 
     text = re.sub(r"http\S+", "", text)
 
@@ -102,46 +100,62 @@ def clean_text(text):
 def highlight_text(text):
 
     positive_words = [
-        "premium","amazing","excellent","beautiful",
-        "great","awesome","luxury","good"
+        "premium",
+        "amazing",
+        "excellent",
+        "beautiful",
+        "great",
+        "awesome",
+        "luxury",
+        "good",
+        "recommended"
     ]
 
     negative_words = [
-        "bad","worst","terrible","poor",
-        "awful","useless","disappointing"
+        "bad",
+        "worst",
+        "terrible",
+        "poor",
+        "awful",
+        "useless",
+        "disappointing"
     ]
 
     words = text.split()
 
-    html = ""
+    highlighted = ""
 
     for word in words:
 
-        clean_word = word.lower()
+        w = word.lower()
 
-        if clean_word in positive_words:
+        # Positive
+        if w in positive_words:
 
-            html += f"""
+            highlighted += f"""
             <span style="
-                background-color: rgba(0,255,150,0.35);
+                background-color: rgba(0,255,120,0.35);
                 padding:6px;
                 margin:4px;
                 border-radius:8px;
                 color:white;
+                font-weight:bold;
             ">
             {word}
             </span>
             """
 
-        elif clean_word in negative_words:
+        # Negative
+        elif w in negative_words:
 
-            html += f"""
+            highlighted += f"""
             <span style="
                 background-color: rgba(255,0,80,0.35);
                 padding:6px;
                 margin:4px;
                 border-radius:8px;
                 color:white;
+                font-weight:bold;
             ">
             {word}
             </span>
@@ -149,7 +163,7 @@ def highlight_text(text):
 
         else:
 
-            html += f"""
+            highlighted += f"""
             <span style="
                 padding:6px;
                 margin:4px;
@@ -159,7 +173,7 @@ def highlight_text(text):
             </span>
             """
 
-    return html
+    return highlighted
 
 # =========================================
 # HISTORY
@@ -196,7 +210,7 @@ page = st.sidebar.radio(
 )
 
 # =========================================
-# HOME
+# HOME PAGE
 # =========================================
 
 if page == "🏠 Home":
@@ -209,14 +223,23 @@ if page == "🏠 Home":
 
     c1, c2, c3 = st.columns(3)
 
-    c1.metric("Model", "TF-IDF + Logistic Regression")
+    c1.metric(
+        "Model",
+        "TF-IDF + Logistic Regression"
+    )
 
-    c2.metric("Accuracy", "89%")
+    c2.metric(
+        "Accuracy",
+        "89%"
+    )
 
-    c3.metric("Inference", "Real-Time")
+    c3.metric(
+        "Inference",
+        "Real-Time"
+    )
 
 # =========================================
-# ANALYZER
+# ANALYZER PAGE
 # =========================================
 
 if page == "🔍 Analyzer":
@@ -232,23 +255,31 @@ if page == "🔍 Analyzer":
         cleaned = clean_text(text)
 
         # =====================================
-        # RULE-BASED BOOSTING
+        # HYBRID RULE-BASED AI
         # =====================================
 
         positive_keywords = [
 
-            "premium","amazing","excellent",
-            "beautiful","great","awesome",
-            "luxury","good","recommended"
-
+            "premium",
+            "amazing",
+            "excellent",
+            "beautiful",
+            "great",
+            "awesome",
+            "luxury",
+            "good",
+            "recommended"
         ]
 
         negative_keywords = [
 
-            "worst","terrible","awful",
-            "bad","poor","useless",
+            "worst",
+            "terrible",
+            "awful",
+            "bad",
+            "poor",
+            "useless",
             "disappointing"
-
         ]
 
         neutral_phrases = [
@@ -258,56 +289,72 @@ if page == "🔍 Analyzer":
             "this is a phone",
             "this is a laptop",
             "the glass is on the table"
-
         ]
 
-        # Neutral
+        # =====================================
+        # RULE-BASED LOGIC
+        # =====================================
+
         if cleaned in neutral_phrases:
 
             pred = "neutral"
 
-            conf = 0.95
+            confidence = 0.95
 
-            proba = [0.05, 0.90, 0.05]
+            probs = [0.05, 0.90, 0.05]
 
-        # Positive
         elif any(word in cleaned for word in positive_keywords):
 
             pred = "positive"
 
-            conf = 0.92
+            confidence = 0.92
 
-            proba = [0.03, 0.05, 0.92]
+            probs = [0.03, 0.05, 0.92]
 
-        # Negative
         elif any(word in cleaned for word in negative_keywords):
 
             pred = "negative"
 
-            conf = 0.95
+            confidence = 0.95
 
-            proba = [0.95, 0.03, 0.02]
+            probs = [0.95, 0.03, 0.02]
 
-        # ML MODEL
         else:
 
-            pred = model.predict([cleaned])[0]
+            # =================================
+            # SAFE ML PREDICTION
+            # =================================
 
-            probs = model.predict_proba([cleaned])[0]
+            try:
 
-            conf = max(probs)
+                pred = model.predict([cleaned])[0]
 
-            classes = model.classes_
+            except:
 
-            prob_map = dict(zip(classes, probs))
+                pred = "neutral"
 
-            proba = [
+            # =================================
+            # SAFE PROBABILITIES
+            # =================================
 
-                prob_map.get("negative", 0),
-                prob_map.get("neutral", 0),
-                prob_map.get("positive", 0)
+            try:
 
-            ]
+                probs = model.predict_proba([cleaned])[0]
+
+                probs = list(probs)
+
+                while len(probs) < 3:
+                    probs.append(0)
+
+                probs = probs[:3]
+
+                confidence = float(max(probs))
+
+            except:
+
+                probs = [0.33, 0.34, 0.33]
+
+                confidence = 0.75
 
         # =====================================
         # RESULT
@@ -319,9 +366,9 @@ if page == "🔍 Analyzer":
 
         c1.success(f"Prediction: {pred.upper()}")
 
-        c2.info(f"Confidence: {conf:.2f}")
+        c2.info(f"Confidence: {confidence:.2f}")
 
-        st.progress(float(conf))
+        st.progress(float(confidence))
 
         # =====================================
         # PIE CHART
@@ -332,22 +379,28 @@ if page == "🔍 Analyzer":
         fig = px.pie(
 
             names=labels,
-            values=proba,
+            values=probs,
             hole=0.5
 
         )
 
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(
+            fig,
+            width='stretch'
+        )
 
         # =====================================
-        # WORD INSIGHTS
+        # WORD HIGHLIGHTING
         # =====================================
 
         st.subheader("Word-Level Insights")
 
         highlighted = highlight_text(cleaned)
 
-        st.markdown(highlighted, unsafe_allow_html=True)
+        st.markdown(
+            highlighted,
+            unsafe_allow_html=True
+        )
 
         # =====================================
         # WORD FREQUENCY
@@ -356,11 +409,20 @@ if page == "🔍 Analyzer":
         words = cleaned.split()
 
         stop_words = {
-            "the","is","and","to",
-            "a","of","for","in","on"
+
+            "the",
+            "is",
+            "and",
+            "to",
+            "a",
+            "of",
+            "for",
+            "in",
+            "on"
         }
 
         words = [
+
             w for w in words
             if w not in stop_words
         ]
@@ -371,7 +433,7 @@ if page == "🔍 Analyzer":
 
             df_words = pd.DataFrame(
                 wc,
-                columns=["word","count"]
+                columns=["word", "count"]
             )
 
             st.subheader("Top Keywords")
@@ -380,7 +442,11 @@ if page == "🔍 Analyzer":
                 df_words.set_index("word")
             )
 
-        log_history(text, pred, conf)
+        # =====================================
+        # SAVE HISTORY
+        # =====================================
+
+        log_history(text, pred, confidence)
 
 # =========================================
 # DASHBOARD
@@ -428,16 +494,26 @@ if page == "📊 Dashboard":
 
         fig = px.pie(
 
-            names=["Positive","Negative","Neutral"],
+            names=[
+                "Positive",
+                "Negative",
+                "Neutral"
+            ],
 
-            values=[pos, neg, neu]
-
+            values=[
+                pos,
+                neg,
+                neu
+            ]
         )
 
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(
+            fig,
+            width='stretch'
+        )
 
 # =========================================
-# METRICS
+# METRICS PAGE
 # =========================================
 
 if page == "📈 Metrics":
@@ -446,27 +522,38 @@ if page == "📈 Metrics":
 
     c1, c2, c3 = st.columns(3)
 
-    c1.metric("Accuracy", "89%")
+    c1.metric(
+        "Accuracy",
+        "89%"
+    )
 
-    c2.metric("Model", "Logistic Regression")
+    c2.metric(
+        "Model",
+        "Logistic Regression"
+    )
 
-    c3.metric("Vectorizer", "TF-IDF")
+    c3.metric(
+        "Vectorizer",
+        "TF-IDF"
+    )
 
     st.markdown("---")
 
     st.write("""
-    ### Techniques Used
 
-    - Natural Language Processing (NLP)
-    - TF-IDF Vectorization
-    - Logistic Regression
-    - Real-Time Inference
-    - Hybrid Rule-Based AI
-    - Word-Level Explainability
-    """)
+### Techniques Used
+
+- Natural Language Processing (NLP)
+- TF-IDF Vectorization
+- Logistic Regression
+- Real-Time Inference
+- Hybrid Rule-Based AI
+- Word-Level Explainability
+
+""")
 
 # =========================================
-# HISTORY
+# HISTORY PAGE
 # =========================================
 
 if page == "📜 History":
@@ -477,7 +564,9 @@ if page == "📜 History":
 
         st.session_state.history = []
 
-    for h in reversed(st.session_state.history):
+    for h in reversed(
+        st.session_state.history
+    ):
 
         st.write(h)
 
